@@ -2,7 +2,8 @@ package entities
 
 import "time"
 
-type userToken struct {
+type UserToken struct {
+	Id     int
 	Jti    string
 	UserId int
 	Expiry time.Time

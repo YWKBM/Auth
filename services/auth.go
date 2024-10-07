@@ -1,25 +1,32 @@
 package services
 
 import (
+	"auth/entities"
 	"auth/repo"
 	"crypto/sha1"
+	"errors"
 	"fmt"
+	"log"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 const (
-	salt = "qweqweasddfasdfasdfqwerqwetasdg"
+	salt       = "qweqweasddfasdfasdfqwerqwetasdg"
+	signingKey = "qrkjk#4#%35FSFJlja#4353KSFjH"
+	tokenTTL   = 12 * time.Hour
 )
 
-type Role string
-
-const (
-	provider Role = "PROVIDER"
-	client   Role = "CLIENT"
-)
-
-type tokenClaims struct {
+type accessTokenClaims struct {
 	UserId   int
-	UserRole Role
+	UserRole entities.Role
+	jwt.RegisteredClaims
+}
+
+type refreshTokenClaims struct {
+	jwt.RegisteredClaims
 }
 
 type AuthService struct {
@@ -40,12 +47,130 @@ func (a *AuthService) CreateProvider() (int, error) {
 	return 0, nil
 }
 
-func (a *AuthService) CreateToken(login, password string) (string, error) {
-	return "", nil
+func (a *AuthService) CreateTokenPair(login, password string) (string, string, error) {
+	user, err := a.repo.GetUser(login, generateHashPassword(password))
+	if err != nil {
+		return "", "", err
+	}
+
+	jti := fmt.Sprint(uuid.New())
+	expiresAt := time.Now().Add(tokenTTL)
+
+	a.repo.CreateToken(jti, user.Id, expiresAt)
+
+	claims := accessTokenClaims{
+		user.Id,
+		user.UserRole,
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    "user",
+			ID:        jti,
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	refresh := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenTTL)),
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		Issuer:    "user-refresh",
+		ID:        jti,
+	})
+
+	st, err := token.SignedString(signingKey)
+	if err != nil {
+		return "", "", err
+	}
+
+	sr, err := refresh.SignedString(signingKey)
+	if err != nil {
+		return "", "", err
+	}
+
+	return st, sr, nil
+
 }
 
-func (a *AuthService) ParseToken(accessToken string) (int, error) {
-	return 0, nil
+func (a *AuthService) ParseAccessToken(accessToken string) (int, error) {
+	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return []byte(signingKey), nil
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	claims, ok := token.Claims.(*accessTokenClaims)
+	if !ok {
+		return 0, errors.New("token claims are not of type *accessTokenClaims")
+	}
+
+	return claims.UserId, nil
+}
+
+func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {
+	rToken, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return []byte(signingKey), nil
+	})
+	if err != nil {
+		log.Fatal((err))
+	}
+
+	refreshTokenClaims, ok := rToken.Claims.(*refreshTokenClaims)
+	if !ok {
+		return "", "", errors.New("token claims are not of type *refreshTokenClaims")
+	}
+
+	userId, role, err := a.repo.GetUserByTokenId(refreshTokenClaims.ID)
+	if err != nil {
+		return "", "", err
+	}
+
+	jti := fmt.Sprint(uuid.New())
+	expiresAt := time.Now().Add(tokenTTL)
+
+	a.repo.CreateToken(jti, userId, expiresAt)
+
+	claims := accessTokenClaims{
+		userId,
+		role,
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    "user",
+			ID:        jti,
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	refresh := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenTTL)),
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		Issuer:    "user-refresh",
+		ID:        jti,
+	})
+
+	st, err := token.SignedString(signingKey)
+	if err != nil {
+		return "", "", err
+	}
+
+	sr, err := refresh.SignedString(signingKey)
+	if err != nil {
+		return "", "", err
+	}
+
+	return st, sr, nil
+
 }
 
 func generateHashPassword(password string) string {
