@@ -2,9 +2,8 @@ package repo
 
 import (
 	"auth/entities"
+	"database/sql"
 	"time"
-
-	"github.com/go-pg/pg/v10/orm"
 )
 
 type Authorization interface {
@@ -18,7 +17,7 @@ type Repos struct {
 	Authorization AuthRepo
 }
 
-func NewRepos(db orm.DB) *Repos {
+func NewRepos(db *sql.DB) *Repos {
 	return &Repos{
 		Authorization: *NewAuthRepo(db),
 	}
