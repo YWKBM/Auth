@@ -33,6 +33,12 @@ type AuthService struct {
 	repo *repo.AuthRepo
 }
 
+func NewAuthService(authRepo *repo.AuthRepo) *AuthService {
+	return &AuthService{
+		repo: authRepo,
+	}
+}
+
 func (a *AuthService) CreateUser(login, password, email string) error {
 	pass := generateHashPassword(password)
 	err := a.repo.CreateUser(login, pass, email)

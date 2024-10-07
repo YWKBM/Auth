@@ -2,17 +2,16 @@ package repo
 
 import (
 	"auth/entities"
+	"database/sql"
 	"errors"
 	"time"
-
-	"github.com/go-pg/pg/v10/orm"
 )
 
 type AuthRepo struct {
-	db orm.DB
+	db *sql.DB
 }
 
-func NewAuthRepo(db orm.DB) *AuthRepo {
+func NewAuthRepo(db *sql.DB) *AuthRepo {
 	return &AuthRepo{db: db}
 }
 
@@ -40,7 +39,9 @@ func (r *AuthRepo) CreateUser(login, password, email string) error {
 func (r *AuthRepo) CreateToken(jti string, userId int, expiry time.Time) error {
 	token := &entities.UserToken{}
 
-	err := r.db.Model(token).Where("token.UserId == ?", userId).First()
+	_, err := r.db.Exec("UPDATE UserToken SET Jti = $1, Expiry = $2 WHERE UserId = $3", jti, expiry, userId)
+	_, err = r.db.Exec("INSERT INTO UserToken SET (Jti, Expiry, UserId) VALUES ($1, $2, $3) WHERE NOT EXISTS (SELECT 1 FROM UserToken WHERE UserId = $3)", jti, expiry, userId)
+
 	if err != nil {
 		return err
 	}
