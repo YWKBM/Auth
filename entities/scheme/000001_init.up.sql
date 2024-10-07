@@ -1,0 +1,15 @@
+CREATE TABLE User(
+    Id SERIAL PRIMARY KEY,
+    Login TEXT NOT NULL,
+    Password TEXT NOT NULL,
+    UserRole Text NOT NULL,
+    Email TEXT NOT NULL,
+    
+)
+
+CREATE TABLE UserToken(
+    Id SERIAL PRIMARY KEY,
+    Jti TEXT NOT NULL,
+    UserId INT NOT NULL REFERENCES User (Id),
+    Expiry TIMESTAMPTZ NOT NULL
+)

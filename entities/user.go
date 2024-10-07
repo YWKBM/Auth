@@ -6,7 +6,6 @@ type User struct {
 	Password string
 	UserRole Role
 	Email    string
-	TokenId  string
 }
 
 type Role string
