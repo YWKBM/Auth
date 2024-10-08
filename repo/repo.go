@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type Authorization interface {
+type AuthorizationRepo interface {
 	CreateUser(login, password, email string) error
 	GetUser(login, password string) (entities.User, error)
 	CreateToken(jti string, userId int, expiry time.Time) error
@@ -14,11 +14,11 @@ type Authorization interface {
 }
 
 type Repos struct {
-	Authorization AuthRepo
+	Authorization AuthorizationRepo
 }
 
 func NewRepos(db *sql.DB) *Repos {
 	return &Repos{
-		Authorization: *NewAuthRepo(db),
+		Authorization: NewAuthRepo(db),
 	}
 }

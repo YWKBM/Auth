@@ -20,7 +20,7 @@ func (r *AuthRepo) CreateUser(login, password, email string) error {
 
 	err := r.db.QueryRow("SELECT Id FROM User WHERE Login == $1 OR Email == $2", login, email).Scan(userId)
 	if err != sql.ErrNoRows {
-		return errors.New("Пользователь уже зарегистрирован")
+		return errors.New("пользователь уже зарегистрирован")
 	}
 
 	err = r.db.QueryRow("INSERT INTO User (email, password, login) values ($1, $2, $3) RETURNING Id", login, password, email).Scan(userId)
@@ -32,8 +32,8 @@ func (r *AuthRepo) CreateUser(login, password, email string) error {
 }
 
 func (r *AuthRepo) CreateToken(jti string, userId int, expiry time.Time) error {
-	_, err := r.db.Exec("UPDATE UserToken SET Jti = $1, Expiry = $2 WHERE UserId = $3", jti, expiry, userId)
-	_, err = r.db.Exec("INSERT INTO UserToken SET (Jti, Expiry, UserId) VALUES ($1, $2, $3) WHERE NOT EXISTS (SELECT 1 FROM UserToken WHERE UserId = $3)", jti, expiry, userId)
+	r.db.Exec("UPDATE UserToken SET Jti = $1, Expiry = $2 WHERE UserId = $3", jti, expiry, userId)
+	_, err := r.db.Exec("INSERT INTO UserToken SET (Jti, Expiry, UserId) VALUES ($1, $2, $3) WHERE NOT EXISTS (SELECT 1 FROM UserToken WHERE UserId = $3)", jti, expiry, userId)
 
 	if err != nil {
 		return err

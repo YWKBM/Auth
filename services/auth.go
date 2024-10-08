@@ -30,18 +30,18 @@ type refreshTokenClaims struct {
 }
 
 type AuthService struct {
-	repo *repo.AuthRepo
+	repo *repo.Repos
 }
 
-func NewAuthService(authRepo *repo.AuthRepo) *AuthService {
+func NewAuthService(repos *repo.Repos) *AuthService {
 	return &AuthService{
-		repo: authRepo,
+		repo: repos,
 	}
 }
 
 func (a *AuthService) CreateUser(login, password, email string) error {
 	pass := generateHashPassword(password)
-	err := a.repo.CreateUser(login, pass, email)
+	err := a.repo.Authorization.CreateUser(login, pass, email)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (a *AuthService) CreateProvider() (int, error) {
 }
 
 func (a *AuthService) CreateTokenPair(login, password string) (string, string, error) {
-	user, err := a.repo.GetUser(login, generateHashPassword(password))
+	user, err := a.repo.Authorization.GetUser(login, generateHashPassword(password))
 	if err != nil {
 		return "", "", err
 	}
@@ -62,7 +62,7 @@ func (a *AuthService) CreateTokenPair(login, password string) (string, string, e
 	jti := fmt.Sprint(uuid.New())
 	expiresAt := time.Now().Add(tokenTTL)
 
-	a.repo.CreateToken(jti, user.Id, expiresAt)
+	a.repo.Authorization.CreateToken(jti, user.Id, expiresAt)
 
 	claims := accessTokenClaims{
 		user.Id,
@@ -101,7 +101,7 @@ func (a *AuthService) CreateTokenPair(login, password string) (string, string, e
 func (a *AuthService) ParseAccessToken(accessToken string) (int, error) {
 	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
 		return []byte(signingKey), nil
@@ -121,7 +121,7 @@ func (a *AuthService) ParseAccessToken(accessToken string) (int, error) {
 func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {
 	rToken, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method")
 		}
 
 		return []byte(signingKey), nil
@@ -135,7 +135,7 @@ func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {
 		return "", "", errors.New("token claims are not of type *refreshTokenClaims")
 	}
 
-	userId, role, err := a.repo.GetUserByTokenId(refreshTokenClaims.ID)
+	userId, role, err := a.repo.Authorization.GetUserByTokenId(refreshTokenClaims.ID)
 	if err != nil {
 		return "", "", err
 	}
@@ -143,7 +143,7 @@ func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {
 	jti := fmt.Sprint(uuid.New())
 	expiresAt := time.Now().Add(tokenTTL)
 
-	a.repo.CreateToken(jti, userId, expiresAt)
+	a.repo.Authorization.CreateToken(jti, userId, expiresAt)
 
 	claims := accessTokenClaims{
 		userId,
