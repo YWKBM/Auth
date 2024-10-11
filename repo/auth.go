@@ -42,6 +42,15 @@ func (r *AuthRepo) CreateToken(jti string, userId int, expiry time.Time) error {
 	return nil
 }
 
+func (r *AuthRepo) DeleteToken(userId int) error {
+	_, err := r.db.Exec("DELETE FROM UserToken WHERE UserId = $1", userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *AuthRepo) GetUserByTokenId(jti string) (int, entities.Role, error) {
 	user := &entities.User{}
 	token := &entities.UserToken{}

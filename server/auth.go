@@ -83,3 +83,11 @@ func (a *AuthServer) RenewCredentials(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	w.Write(resp)
 }
+
+func (a *AuthServer) Logout(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (a *AuthServer) ChangePassword(w http.ResponseWriter, r *http.Request) {
+
+}

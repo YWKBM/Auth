@@ -64,15 +64,13 @@ func (a *AuthService) CreateTokenPair(login, password string) (string, string, e
 
 	a.repo.Authorization.CreateToken(jti, user.Id, expiresAt)
 
-	claims := accessTokenClaims{
-		user.Id,
-		user.UserRole,
-		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expiresAt),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "user",
-			ID:        jti,
-		},
+	claims := &jwt.MapClaims{
+		"UserId":    user.Id,
+		"UserRole":  user.UserRole,
+		"ExpiresAt": jwt.NewNumericDate(expiresAt),
+		"IssuedAt":  jwt.NewNumericDate(time.Now()),
+		"Issuer":    "user",
+		"ID":        jti,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -98,7 +96,21 @@ func (a *AuthService) CreateTokenPair(login, password string) (string, string, e
 
 }
 
-func (a *AuthService) ParseAccessToken(accessToken string) (int, error) {
+func (a *AuthService) Logout(accessToken string) error {
+	userId, err := parseAccessToken(accessToken)
+	if err != nil {
+		return err
+	}
+
+	err = a.repo.Authorization.DeleteToken(userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func parseAccessToken(accessToken string) (int, error) {
 	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -110,12 +122,12 @@ func (a *AuthService) ParseAccessToken(accessToken string) (int, error) {
 		log.Fatal(err)
 	}
 
-	claims, ok := token.Claims.(*accessTokenClaims)
+	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		return 0, errors.New("token claims are not of type *accessTokenClaims")
 	}
 
-	return claims.UserId, nil
+	return claims["UserId"].(int), nil
 }
 
 func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {

@@ -6,7 +6,7 @@ type AuthorizationService interface {
 	CreateUser(login, password, email string) error
 	CreateProvider() (int, error)
 	CreateTokenPair(login, password string) (string, string, error)
-	ParseAccessToken(accessToken string) (int, error)
+	// ParseAccessToken(accessToken string) (int, error)
 	RenewToken(refreshToken string) (string, string, error)
 }
 
