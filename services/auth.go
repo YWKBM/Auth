@@ -41,6 +41,7 @@ func NewAuthService(repos *repo.Repos) *AuthService {
 
 func (a *AuthService) CreateUser(login, password, email string) error {
 	pass := generateHashPassword(password)
+	fmt.Println(pass)
 	err := a.repo.Authorization.CreateUser(login, pass, email)
 	if err != nil {
 		return err
@@ -54,10 +55,15 @@ func (a *AuthService) CreateProvider() (int, error) {
 }
 
 func (a *AuthService) CreateTokenPair(login, password string) (string, string, error) {
-	user, err := a.repo.Authorization.GetUser(login, generateHashPassword(password))
+	pass := generateHashPassword(password)
+	fmt.Println(pass)
+	user, err := a.repo.Authorization.GetUser(login, pass)
 	if err != nil {
 		return "", "", err
 	}
+
+	fmt.Println(user.UserRole)
+	fmt.Println(user.Email)
 
 	jti := fmt.Sprint(uuid.New())
 	expiresAt := time.Now().Add(tokenTTL)
@@ -82,12 +88,12 @@ func (a *AuthService) CreateTokenPair(login, password string) (string, string, e
 		ID:        jti,
 	})
 
-	st, err := token.SignedString(signingKey)
+	st, err := token.SignedString([]byte(signingKey))
 	if err != nil {
 		return "", "", err
 	}
 
-	sr, err := refresh.SignedString(signingKey)
+	sr, err := refresh.SignedString([]byte(signingKey))
 	if err != nil {
 		return "", "", err
 	}
@@ -96,13 +102,8 @@ func (a *AuthService) CreateTokenPair(login, password string) (string, string, e
 
 }
 
-func (a *AuthService) Logout(accessToken string) error {
-	userId, err := parseAccessToken(accessToken)
-	if err != nil {
-		return err
-	}
-
-	err = a.repo.Authorization.DeleteToken(userId)
+func (a *AuthService) DeleteTokenPair(userId int) error {
+	err := a.repo.Authorization.DeleteToken(userId)
 	if err != nil {
 		return err
 	}
@@ -110,7 +111,25 @@ func (a *AuthService) Logout(accessToken string) error {
 	return nil
 }
 
-func parseAccessToken(accessToken string) (int, error) {
+func (a *AuthService) ChangePassword(userId int, oldPassword, newPassword string) error {
+	user, err := a.repo.Authorization.GetUserById(userId)
+	if err != nil {
+		return err
+	}
+
+	if user.Password != generateHashPassword(oldPassword) {
+		return errors.New("wrong password")
+	}
+
+	err = a.repo.Authorization.ChangePassword(user.Id, generateHashPassword(newPassword))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *AuthService) ParseAccessToken(accessToken string) (int, error) {
 	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])

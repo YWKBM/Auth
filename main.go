@@ -2,6 +2,11 @@ package main
 
 import (
 	"auth/database"
+	"auth/handler"
+	"auth/repo"
+	"auth/services"
+	"log"
+	"net/http"
 	"time"
 )
 
@@ -20,10 +25,25 @@ func main() {
 		panic(err)
 	}
 
-	for {
-		time.Sleep(time.Second * 5)
-		db.Ping()
+	defer db.Close()
+
+	repo := repo.NewRepos(db)
+	servs := services.NewServices(repo)
+	handler := handler.NewHandler(servs)
+
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: handler.Init(),
 	}
+
+	log.Println("SERVER STARTED AT", time.Now().Format(time.RFC3339))
+
+	if err := server.ListenAndServe(); err != nil {
+		log.Fatal()
+	}
+
+	//handler.Init()
+
 	// 	Host     string
 	// Port     string
 	// Username string

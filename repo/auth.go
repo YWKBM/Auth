@@ -11,19 +11,23 @@ type AuthRepo struct {
 	db *sql.DB
 }
 
-func NewAuthRepo(db *sql.DB) *AuthRepo {
+func newAuthRepo(db *sql.DB) *AuthRepo {
 	return &AuthRepo{db: db}
 }
 
 func (r *AuthRepo) CreateUser(login, password, email string) error {
 	var userId int
 
-	err := r.db.QueryRow("SELECT Id FROM User WHERE Login == $1 OR Email == $2", login, email).Scan(userId)
+	err := r.db.QueryRow("SELECT id FROM users WHERE login = $1 OR email = $2", login, email).Scan(&userId)
 	if err != sql.ErrNoRows {
-		return errors.New("пользователь уже зарегистрирован")
+		return err
 	}
 
-	err = r.db.QueryRow("INSERT INTO User (email, password, login) values ($1, $2, $3) RETURNING Id", login, password, email).Scan(userId)
+	if userId > 0 {
+		return errors.New("пользователь уже зарегестрирован")
+	}
+
+	err = r.db.QueryRow("INSERT INTO users (login, password, email, userrole) values ($1, $2, $3, $4) RETURNING id", login, password, email, "USER").Scan(&userId)
 	if err != nil {
 		return err
 	}
@@ -32,8 +36,8 @@ func (r *AuthRepo) CreateUser(login, password, email string) error {
 }
 
 func (r *AuthRepo) CreateToken(jti string, userId int, expiry time.Time) error {
-	r.db.Exec("UPDATE UserToken SET Jti = $1, Expiry = $2 WHERE UserId = $3", jti, expiry, userId)
-	_, err := r.db.Exec("INSERT INTO UserToken SET (Jti, Expiry, UserId) VALUES ($1, $2, $3) WHERE NOT EXISTS (SELECT 1 FROM UserToken WHERE UserId = $3)", jti, expiry, userId)
+	r.db.Exec("UPDATE usertoken SET jti = $1, expiry = $2 WHERE userid = $3", jti, expiry, userId)
+	_, err := r.db.Exec("INSERT INTO usertoken SET (jti, expiry, userid) VALUES ($1, $2, $3) WHERE NOT EXISTS (SELECT 1 FROM usertoken WHERE userid = $3)", jti, expiry, userId)
 
 	if err != nil {
 		return err
@@ -43,7 +47,7 @@ func (r *AuthRepo) CreateToken(jti string, userId int, expiry time.Time) error {
 }
 
 func (r *AuthRepo) DeleteToken(userId int) error {
-	_, err := r.db.Exec("DELETE FROM UserToken WHERE UserId = $1", userId)
+	_, err := r.db.Exec("DELETE FROM usertoken WHERE userid = $1", userId)
 	if err != nil {
 		return err
 	}
@@ -55,7 +59,7 @@ func (r *AuthRepo) GetUserByTokenId(jti string) (int, entities.Role, error) {
 	user := &entities.User{}
 	token := &entities.UserToken{}
 
-	err := r.db.QueryRow("SELECT * FROM User JOIN UserToken ON User.Id = UserToken.UserId WHERE UserToken.Jti == $1", jti).
+	err := r.db.QueryRow("SELECT * FROM users JOIN usertoken ON user.id = usertoken.userid WHERE usertoken.jti = $1", jti).
 		Scan(user.Id, user.Email, user.UserRole, user.Password, token.Id, token.Jti, token.Expiry)
 
 	if err == sql.ErrNoRows {
@@ -65,13 +69,33 @@ func (r *AuthRepo) GetUserByTokenId(jti string) (int, entities.Role, error) {
 	return user.Id, user.UserRole, nil
 }
 
-func (r *AuthRepo) GetUser(login, password string) (entities.User, error) {
+func (r *AuthRepo) GetUserById(userId int) (entities.User, error) {
 	user := &entities.User{}
 
-	err := r.db.QueryRow("SELECT * FROM User WHERE Login == $1 AND Password == $2", login, password).Scan(user.Id, user.Login, user.Password, user.Email, user.UserRole)
+	err := r.db.QueryRow("SELECT * FROM users Where Id = $1", userId).Scan(user.Id, user.Email, user.Password, user.UserRole)
 	if err != nil {
 		return *user, err
 	}
 
 	return *user, nil
+}
+
+func (r *AuthRepo) GetUser(login, password string) (entities.User, error) {
+	user := &entities.User{}
+
+	err := r.db.QueryRow("SELECT * FROM users WHERE login = $1 AND password = $2", login, password).Scan(&user.Id, &user.Login, &user.Password, &user.UserRole, &user.Email)
+	if err != nil {
+		return *user, err
+	}
+
+	return *user, nil
+}
+
+func (r *AuthRepo) ChangePassword(userId int, newPassword string) error {
+	_, err := r.db.Exec("UPDATE users SET password = $1 WHERE id = $2", newPassword, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
