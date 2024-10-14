@@ -38,6 +38,8 @@ func (h *Handler) userIdentity(next http.Handler) http.Handler {
 			return
 		}
 
+		fmt.Println(r.Header)
+
 		r.Header.Add(userCtx, fmt.Sprintf("%v", userId))
 		next.ServeHTTP(w, r)
 	})

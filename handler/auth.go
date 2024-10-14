@@ -72,12 +72,16 @@ func (a *AuthHandler) RenewCredentials(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder((r.Body)).Decode(&req)
 	if err != nil {
+		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	aToken, rToken, err := a.authService.RenewToken(req.RefreshToken)
 	if err != nil {
+		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	result := dto.TokenPairResponse{
@@ -87,7 +91,9 @@ func (a *AuthHandler) RenewCredentials(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := json.Marshal(result)
 	if err != nil {
+		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Add("Content-Type", "application/json")

@@ -4,6 +4,7 @@ import (
 	"auth/entities"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -36,11 +37,19 @@ func (r *AuthRepo) CreateUser(login, password, email string) error {
 }
 
 func (r *AuthRepo) CreateToken(jti string, userId int, expiry time.Time) error {
-	r.db.Exec("UPDATE usertoken SET jti = $1, expiry = $2 WHERE userid = $3", jti, expiry, userId)
-	_, err := r.db.Exec("INSERT INTO usertoken SET (jti, expiry, userid) VALUES ($1, $2, $3) WHERE NOT EXISTS (SELECT 1 FROM usertoken WHERE userid = $3)", jti, expiry, userId)
+	token := &entities.UserToken{}
 
-	if err != nil {
-		return err
+	err := r.db.QueryRow("SELECT * FROM usertoken WHERE userid = $1", userId).Scan(&token.Id, &token.Jti, &token.UserId, &token.Expiry)
+	fmt.Println(err)
+
+	if err == sql.ErrNoRows {
+		_, err := r.db.Exec("INSERT INTO usertoken (jti, expiry, userid) VALUES ($1, $2, $3)", jti, expiry, userId)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+	} else {
+		r.db.Exec("UPDATE usertoken SET jti = $1, expiry = $2 WHERE userid = $3", jti, expiry, userId)
 	}
 
 	return nil
@@ -59,8 +68,8 @@ func (r *AuthRepo) GetUserByTokenId(jti string) (int, entities.Role, error) {
 	user := &entities.User{}
 	token := &entities.UserToken{}
 
-	err := r.db.QueryRow("SELECT * FROM users JOIN usertoken ON user.id = usertoken.userid WHERE usertoken.jti = $1", jti).
-		Scan(&user.Id, &user.Email, &user.UserRole, &user.Password, &token.Id, &token.Jti, &token.Expiry)
+	err := r.db.QueryRow("SELECT * FROM users JOIN usertoken ON users.id = usertoken.userid WHERE usertoken.jti = $1", jti).
+		Scan(&user.Id, &user.Login, &user.Password, &user.UserRole, &user.Email, &token.Id, &token.Jti, &token.UserId, &token.Expiry)
 
 	if err == sql.ErrNoRows {
 		return 0, "", errors.New("некорректный RefreshToken")
@@ -72,7 +81,7 @@ func (r *AuthRepo) GetUserByTokenId(jti string) (int, entities.Role, error) {
 func (r *AuthRepo) GetUserById(userId int) (entities.User, error) {
 	user := &entities.User{}
 
-	err := r.db.QueryRow("SELECT * FROM users Where Id = $1", userId).Scan(&user.Id, &user.Email, &user.Password, &user.UserRole)
+	err := r.db.QueryRow("SELECT * FROM users Where id = $1", userId).Scan(&user.Id, &user.Login, &user.Password, &user.UserRole, &user.Email)
 	if err != nil {
 		return *user, err
 	}

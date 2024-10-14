@@ -2,6 +2,7 @@ package handler
 
 import (
 	"auth/services"
+	"net/http"
 
 	"github.com/gorilla/mux"
 )
@@ -17,13 +18,12 @@ func NewHandler(servs *services.Services) *Handler {
 func (h *Handler) Init() *mux.Router {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/api/auth/sign_up", h.authHandler.SignUp)
-	router.HandleFunc("/api/auth/sign_in", h.authHandler.SignIn)
-	router.HandleFunc("/api/auth/sign_out", h.authHandler.SignOut)
-	router.HandleFunc("/api/auth/renew", h.authHandler.RenewCredentials)
+	router.HandleFunc("/api/auth/sign_up", h.authHandler.SignUp).Methods("POST")
+	router.HandleFunc("/api/auth/sign_in", h.authHandler.SignIn).Methods("POST")
+	router.HandleFunc("/api/auth/renew", h.authHandler.RenewCredentials).Methods("POST")
 
-	//router.Use(h.userIdentity)
-	router.HandleFunc("/api/auth/change_password", h.authHandler.ChangePassword)
+	router.Handle("/api/auth/sign_out", h.userIdentity(http.HandlerFunc(h.authHandler.SignOut))).Methods("POST")
+	router.Handle("/api/auth/change_password", h.userIdentity(http.HandlerFunc(h.authHandler.ChangePassword))).Methods("POST")
 
 	return router
 }

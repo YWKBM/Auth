@@ -1,12 +1,12 @@
 package services
 
 import (
-	"auth/entities"
 	"auth/repo"
 	"crypto/sha1"
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -18,16 +18,6 @@ const (
 	signingKey = "qrkjk#4#%35FSFJlja#4353KSFjH"
 	tokenTTL   = 12 * time.Hour
 )
-
-type accessTokenClaims struct {
-	UserId   int
-	UserRole entities.Role
-	jwt.RegisteredClaims
-}
-
-type refreshTokenClaims struct {
-	jwt.RegisteredClaims
-}
 
 type AuthService struct {
 	repo *repo.Repos
@@ -68,15 +58,13 @@ func (a *AuthService) CreateTokenPair(login, password string) (string, string, e
 	jti := fmt.Sprint(uuid.New())
 	expiresAt := time.Now().Add(tokenTTL)
 
-	a.repo.Authorization.CreateToken(jti, user.Id, expiresAt)
-
 	claims := &jwt.MapClaims{
-		"UserId":    user.Id,
+		"UserId":    fmt.Sprintf("%v", user.Id),
 		"UserRole":  user.UserRole,
 		"ExpiresAt": jwt.NewNumericDate(expiresAt),
 		"IssuedAt":  jwt.NewNumericDate(time.Now()),
 		"Issuer":    "user",
-		"ID":        jti,
+		"jti":       jti,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -98,6 +86,9 @@ func (a *AuthService) CreateTokenPair(login, password string) (string, string, e
 		return "", "", err
 	}
 
+	a.repo.Authorization.CreateToken(jti, user.Id, expiresAt)
+	fmt.Println(jti, user.Id, expiresAt)
+
 	return st, sr, nil
 
 }
@@ -118,6 +109,7 @@ func (a *AuthService) ChangePassword(userId int, oldPassword, newPassword string
 	}
 
 	if user.Password != generateHashPassword(oldPassword) {
+		fmt.Println("wrong password")
 		return errors.New("wrong password")
 	}
 
@@ -138,15 +130,21 @@ func (a *AuthService) ParseAccessToken(accessToken string) (int, error) {
 		return []byte(signingKey), nil
 	})
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return 0, errors.New("token claims are not of type *accessTokenClaims")
+		return 0, errors.New("unknown token claims")
 	}
 
-	return claims["UserId"].(int), nil
+	userIdVal := claims["UserId"]
+	userId, err := strconv.Atoi(userIdVal.(string))
+	if err != nil {
+		return 0, err
+	}
+
+	return userId, nil
 }
 
 func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {
@@ -161,12 +159,21 @@ func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {
 		log.Fatal((err))
 	}
 
-	refreshTokenClaims, ok := rToken.Claims.(*refreshTokenClaims)
+	refreshTokenClaims, ok := rToken.Claims.(jwt.MapClaims)
 	if !ok {
-		return "", "", errors.New("token claims are not of type *refreshTokenClaims")
+		return "", "", errors.New("unknown token claims")
 	}
 
-	userId, role, err := a.repo.Authorization.GetUserByTokenId(refreshTokenClaims.ID)
+	issuer, err := refreshTokenClaims.GetIssuer()
+	if err != nil {
+		return "", "", err
+	}
+
+	if issuer != "user-refresh" {
+		return "", "", errors.New("invalid issuer")
+	}
+
+	userId, role, err := a.repo.Authorization.GetUserByTokenId(refreshTokenClaims["jti"].(string))
 	if err != nil {
 		return "", "", err
 	}
@@ -174,17 +181,13 @@ func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {
 	jti := fmt.Sprint(uuid.New())
 	expiresAt := time.Now().Add(tokenTTL)
 
-	a.repo.Authorization.CreateToken(jti, userId, expiresAt)
-
-	claims := accessTokenClaims{
-		userId,
-		role,
-		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expiresAt),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "user",
-			ID:        jti,
-		},
+	claims := &jwt.MapClaims{
+		"UserId":    fmt.Sprintf("%v", userId),
+		"UserRole":  role,
+		"ExpiresAt": jwt.NewNumericDate(expiresAt),
+		"IssuedAt":  jwt.NewNumericDate(time.Now()),
+		"Issuer":    "user",
+		"jti":       jti,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -196,15 +199,17 @@ func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {
 		ID:        jti,
 	})
 
-	st, err := token.SignedString(signingKey)
+	st, err := token.SignedString([]byte(signingKey))
 	if err != nil {
 		return "", "", err
 	}
 
-	sr, err := refresh.SignedString(signingKey)
+	sr, err := refresh.SignedString([]byte(signingKey))
 	if err != nil {
 		return "", "", err
 	}
+
+	a.repo.Authorization.CreateToken(jti, userId, expiresAt)
 
 	return st, sr, nil
 
