@@ -60,7 +60,7 @@ func (r *AuthRepo) GetUserByTokenId(jti string) (int, entities.Role, error) {
 	token := &entities.UserToken{}
 
 	err := r.db.QueryRow("SELECT * FROM users JOIN usertoken ON user.id = usertoken.userid WHERE usertoken.jti = $1", jti).
-		Scan(user.Id, user.Email, user.UserRole, user.Password, token.Id, token.Jti, token.Expiry)
+		Scan(&user.Id, &user.Email, &user.UserRole, &user.Password, &token.Id, &token.Jti, &token.Expiry)
 
 	if err == sql.ErrNoRows {
 		return 0, "", errors.New("некорректный RefreshToken")
@@ -72,7 +72,7 @@ func (r *AuthRepo) GetUserByTokenId(jti string) (int, entities.Role, error) {
 func (r *AuthRepo) GetUserById(userId int) (entities.User, error) {
 	user := &entities.User{}
 
-	err := r.db.QueryRow("SELECT * FROM users Where Id = $1", userId).Scan(user.Id, user.Email, user.Password, user.UserRole)
+	err := r.db.QueryRow("SELECT * FROM users Where Id = $1", userId).Scan(&user.Id, &user.Email, &user.Password, &user.UserRole)
 	if err != nil {
 		return *user, err
 	}
