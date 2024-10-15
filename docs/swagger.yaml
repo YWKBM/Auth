@@ -1,0 +1,136 @@
+basePath: /api/auth
+definitions:
+  dto.ChangePasswordRequest:
+    properties:
+      new_password:
+        type: string
+      old_password:
+        type: string
+    type: object
+  dto.RenewTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  dto.SignUpRequest:
+    properties:
+      email:
+        type: string
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  dto.TokenPairResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Auth API
+  title: Swagger Auth API
+  version: "1.0"
+paths:
+  /change_password:
+    post:
+      description: Change password
+      parameters:
+      - description: credentials
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ChangePasswordRequest'
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      security:
+      - apikey: []
+      summary: ChangePassword
+  /renew:
+    post:
+      consumes:
+      - application/json
+      description: renew token pair
+      parameters:
+      - description: credentials
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RenewTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TokenPairResponse'
+        "500":
+          description: Internal Server Error
+      summary: Renew
+  /sign_in:
+    post:
+      consumes:
+      - application/json
+      description: sign in
+      parameters:
+      - description: credentials
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SignUpRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TokenPairResponse'
+        "500":
+          description: Internal Server Error
+      summary: SignIn
+  /sign_out:
+    post:
+      description: Sign out
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      security:
+      - apikey: []
+      summary: SignOut
+  /sign_up:
+    post:
+      consumes:
+      - application/json
+      description: sign up
+      parameters:
+      - description: credentials
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SignUpRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      summary: SignUp
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Bearer-Token
+    type: apiKey
+swagger: "2.0"

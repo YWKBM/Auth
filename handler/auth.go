@@ -15,6 +15,15 @@ func newAuthHandler(authService services.AuthorizationService) *AuthHandler {
 	return &AuthHandler{authService: authService}
 }
 
+// SignUp godoc
+// @Summary      SignUp
+// @Description  sign up
+// @Accept       json
+// @Produce      json
+// @Param input body dto.SignUpRequest true "credentials"
+// @Success      200
+// @Failure      500
+// @Router       /sign_up [post]
 func (a *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	var req dto.SignUpRequest
 
@@ -40,6 +49,15 @@ func (a *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// SignIn godoc
+// @Summary      SignIn
+// @Description  sign in
+// @Accept       json
+// @Produce      json
+// @Param input body dto.SignUpRequest true "credentials"
+// @Success      200 	{object}	dto.TokenPairResponse
+// @Failure      500
+// @Router       /sign_in [post]
 func (a *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	var req dto.SignInRequest
 
@@ -73,6 +91,15 @@ func (a *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
+// Renew godoc
+// @Summary      Renew
+// @Description  renew token pair
+// @Accept       json
+// @Produce      json
+// @Param input body dto.RenewTokenRequest true "credentials"
+// @Success      200 	{object}		dto.TokenPairResponse
+// @Failure      500
+// @Router       /renew [post]
 func (a *AuthHandler) RenewCredentials(w http.ResponseWriter, r *http.Request) {
 	var req dto.RenewTokenRequest
 
@@ -106,6 +133,13 @@ func (a *AuthHandler) RenewCredentials(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
+// SignOut godoc
+// @Summary      SignOut
+// @Description  Sign out
+// @Security 	 apikey
+// @Success      200
+// @Failure      500
+// @Router       /sign_out [post]
 func (a *AuthHandler) SignOut(w http.ResponseWriter, r *http.Request) {
 	userId, err := getUserId(w, r)
 	if err != nil {
@@ -122,6 +156,14 @@ func (a *AuthHandler) SignOut(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ChangePassword godoc
+// @Summary      ChangePassword
+// @Description  Change password
+// @Security 	 apikey
+// @Param input body dto.ChangePasswordRequest true "credentials"
+// @Success      200
+// @Failure      500
+// @Router       /change_password [post]
 func (a *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	userId, err := getUserId(w, r)
 	if err != nil {

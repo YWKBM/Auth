@@ -10,6 +10,16 @@ import (
 	"time"
 )
 
+// @title           Swagger Auth API
+// @version         1.0
+// @description     Auth API
+
+// @host      localhost:8080
+// @BasePath  /api/auth
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Bearer-Token
+
 func main() {
 	connectionInfo := database.ConnectionInfo{
 		Username: "postgres",
