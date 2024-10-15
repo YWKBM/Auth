@@ -4,7 +4,6 @@ import (
 	"auth/handler/dto"
 	"auth/services"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -21,20 +20,23 @@ func (a *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
 	}
 
 	err = req.Validate()
 	if err != nil {
-		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
 	}
 
 	err = a.authService.CreateUser(req.Login, req.Password, req.Email)
 	if err != nil {
-		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
 	}
 }
 
@@ -44,12 +46,15 @@ func (a *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
 	}
 
 	aToken, rToken, err := a.authService.CreateTokenPair(req.Login, req.Password)
 	if err != nil {
-		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
 	}
 
 	result := dto.TokenPairResponse{
@@ -59,8 +64,9 @@ func (a *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := json.Marshal(result)
 	if err != nil {
-		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
 	}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -72,15 +78,15 @@ func (a *AuthHandler) RenewCredentials(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder((r.Body)).Decode(&req)
 	if err != nil {
-		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
 	aToken, rToken, err := a.authService.RenewToken(req.RefreshToken)
 	if err != nil {
-		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -91,8 +97,8 @@ func (a *AuthHandler) RenewCredentials(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := json.Marshal(result)
 	if err != nil {
-		fmt.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -104,11 +110,14 @@ func (a *AuthHandler) SignOut(w http.ResponseWriter, r *http.Request) {
 	userId, err := getUserId(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
 	err = a.authService.DeleteTokenPair(userId)
 	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 		return
 	}
 }
@@ -116,6 +125,8 @@ func (a *AuthHandler) SignOut(w http.ResponseWriter, r *http.Request) {
 func (a *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	userId, err := getUserId(w, r)
 	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -124,8 +135,14 @@ func (a *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
-	a.authService.ChangePassword(userId, req.OldPassword, req.NewPassword)
+	err = a.authService.ChangePassword(userId, req.OldPassword, req.NewPassword)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
 }
