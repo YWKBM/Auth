@@ -1,9 +1,9 @@
 package repo
 
 import (
+	"auth/customErrors"
 	"auth/entities"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 )
@@ -20,12 +20,12 @@ func (r *AuthRepo) CreateUser(login, password, email string) error {
 	var userId int
 
 	err := r.db.QueryRow("SELECT id FROM users WHERE login = $1 OR email = $2", login, email).Scan(&userId)
-	if err != sql.ErrNoRows {
+	if err != nil && err != sql.ErrNoRows {
 		return err
 	}
 
 	if userId > 0 {
-		return errors.New("пользователь уже зарегестрирован")
+		return &customErrors.AlreadyExistsError{}
 	}
 
 	err = r.db.QueryRow("INSERT INTO users (login, password, email, userrole) values ($1, $2, $3, $4) RETURNING id", login, password, email, "USER").Scan(&userId)
@@ -71,8 +71,8 @@ func (r *AuthRepo) GetUserByTokenId(jti string) (int, entities.Role, error) {
 	err := r.db.QueryRow("SELECT * FROM users JOIN usertoken ON users.id = usertoken.userid WHERE usertoken.jti = $1", jti).
 		Scan(&user.Id, &user.Login, &user.Password, &user.UserRole, &user.Email, &token.Id, &token.Jti, &token.UserId, &token.Expiry)
 
-	if err == sql.ErrNoRows {
-		return 0, "", errors.New("некорректный RefreshToken")
+	if err != nil {
+		return 0, "", err
 	}
 
 	return user.Id, user.UserRole, nil
@@ -93,6 +93,10 @@ func (r *AuthRepo) GetUser(login, password string) (entities.User, error) {
 	user := &entities.User{}
 
 	err := r.db.QueryRow("SELECT * FROM users WHERE login = $1 AND password = $2", login, password).Scan(&user.Id, &user.Login, &user.Password, &user.UserRole, &user.Email)
+	if err == sql.ErrNoRows {
+		return *user, &customErrors.NotFoundError{}
+	}
+
 	if err != nil {
 		return *user, err
 	}

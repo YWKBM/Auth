@@ -51,13 +51,4 @@ func main() {
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatal()
 	}
-
-	//handler.Init()
-
-	// 	Host     string
-	// Port     string
-	// Username string
-	// DBName   string
-	// SSLMode  string
-	// Password string
 }
