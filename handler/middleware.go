@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"auth/customErrors"
 	"errors"
 	"fmt"
 	"net/http"
@@ -12,6 +13,33 @@ const (
 	authHeader = "Authorization"
 	userCtx    = "UserId"
 )
+
+func (h *Handler) requestLogging(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h.log.Debug(r)
+		next.ServeHTTP(w, r)
+	})
+}
+
+type ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request) error
+
+func (h *Handler) errorProcessing(f ErrorHandlerFunc) func(w http.ResponseWriter, r *http.Request) {
+	return (func(w http.ResponseWriter, r *http.Request) {
+		err := f(w, r)
+
+		switch err {
+		case err.(*customErrors.NotFoundError):
+			w.WriteHeader(404)
+			w.Write([]byte(err.Error()))
+		case err.(*customErrors.AlreadyExistsError):
+			w.WriteHeader(403)
+			w.Write([]byte(err.Error()))
+		default:
+			w.WriteHeader(500)
+			h.log.Error(err)
+		}
+	})
+}
 
 func (h *Handler) userIdentity(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
