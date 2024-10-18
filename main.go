@@ -7,7 +7,10 @@ import (
 	"auth/services"
 	"log"
 	"net/http"
+	"os"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // @title           Swagger Auth API
@@ -37,9 +40,18 @@ func main() {
 
 	defer db.Close()
 
+	logger := logrus.New()
+
+	file, err := os.OpenFile("logrus.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err == nil {
+		logger.SetOutput(file)
+	} else {
+		logger.Info("Failed to log to file, using default stderr")
+	}
+
 	repo := repo.NewRepos(db)
 	servs := services.NewServices(repo)
-	handler := handler.NewHandler(servs)
+	handler := handler.NewHandler(servs, logger)
 
 	server := &http.Server{
 		Addr:    ":8080",
