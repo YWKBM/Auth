@@ -133,6 +133,11 @@ func (a *AuthService) ParseAccessToken(accessToken string) (int, error) {
 		return 0, errors.New("unknown token claims")
 	}
 
+	exp := claims["ExpiresAt"]
+	if exp.(time.Time).Unix() < time.Now().Unix() {
+		return 0, errors.New("token expired")
+	}
+
 	userIdVal := claims["UserId"]
 	userId, err := strconv.Atoi(userIdVal.(string))
 	if err != nil {
@@ -162,6 +167,15 @@ func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {
 	issuer, err := refreshTokenClaims.GetIssuer()
 	if err != nil {
 		return "", "", err
+	}
+
+	exp, err := refreshTokenClaims.GetExpirationTime()
+	if err != nil {
+		return "", "", err
+	}
+
+	if exp != nil && exp.Time.Unix() < time.Now().Unix() {
+		return "", "", errors.New("token expired")
 	}
 
 	if issuer != "user-refresh" {
