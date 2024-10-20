@@ -67,6 +67,9 @@ func (r *AuthRepo) GetUserByTokenId(jti string) (int, entities.Role, error) {
 
 	err := r.db.QueryRow("SELECT * FROM users JOIN usertoken ON users.id = usertoken.userid WHERE usertoken.jti = $1", jti).
 		Scan(&user.Id, &user.Login, &user.Password, &user.UserRole, &user.Email, &token.Id, &token.Jti, &token.UserId, &token.Expiry)
+	if err == sql.ErrNoRows {
+		return 0, "", &customErrors.NotFoundError{}
+	}
 
 	if err != nil {
 		return 0, "", err
