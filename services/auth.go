@@ -31,7 +31,6 @@ func NewAuthService(repos *repo.Repos) *AuthService {
 
 func (a *AuthService) CreateUser(login, password, email string) error {
 	pass := generateHashPassword(password)
-	fmt.Println(pass)
 	err := a.repo.Authorization.CreateUser(login, pass, email)
 	if err != nil {
 		return err
@@ -46,14 +45,10 @@ func (a *AuthService) CreateProvider() (int, error) {
 
 func (a *AuthService) CreateTokenPair(login, password string) (string, string, error) {
 	pass := generateHashPassword(password)
-	fmt.Println(pass)
 	user, err := a.repo.Authorization.GetUser(login, pass)
 	if err != nil {
 		return "", "", err
 	}
-
-	fmt.Println(user.UserRole)
-	fmt.Println(user.Email)
 
 	jti := fmt.Sprint(uuid.New())
 	expiresAt := time.Now().Add(tokenTTL)
@@ -87,7 +82,6 @@ func (a *AuthService) CreateTokenPair(login, password string) (string, string, e
 	}
 
 	a.repo.Authorization.CreateToken(jti, user.Id, expiresAt)
-	fmt.Println(jti, user.Id, expiresAt)
 
 	return st, sr, nil
 
@@ -109,8 +103,7 @@ func (a *AuthService) ChangePassword(userId int, oldPassword, newPassword string
 	}
 
 	if user.Password != generateHashPassword(oldPassword) {
-		fmt.Println("wrong password")
-		return errors.New("wrong password")
+		return errors.New("wrong login or password")
 	}
 
 	err = a.repo.Authorization.ChangePassword(user.Id, generateHashPassword(newPassword))
@@ -130,7 +123,7 @@ func (a *AuthService) ParseAccessToken(accessToken string) (int, error) {
 		return []byte(signingKey), nil
 	})
 	if err != nil {
-		fmt.Println(err)
+		return 0, err
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)

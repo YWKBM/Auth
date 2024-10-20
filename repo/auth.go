@@ -4,7 +4,6 @@ import (
 	"auth/customErrors"
 	"auth/entities"
 	"database/sql"
-	"fmt"
 	"time"
 )
 
@@ -40,12 +39,10 @@ func (r *AuthRepo) CreateToken(jti string, userId int, expiry time.Time) error {
 	token := &entities.UserToken{}
 
 	err := r.db.QueryRow("SELECT * FROM usertoken WHERE userid = $1", userId).Scan(&token.Id, &token.Jti, &token.UserId, &token.Expiry)
-	fmt.Println(err)
 
 	if err == sql.ErrNoRows {
 		_, err := r.db.Exec("INSERT INTO usertoken (jti, expiry, userid) VALUES ($1, $2, $3)", jti, expiry, userId)
 		if err != nil {
-			fmt.Println(err)
 			return err
 		}
 	} else {
