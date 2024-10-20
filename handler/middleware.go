@@ -16,7 +16,7 @@ const (
 
 func (h *Handler) requestLogging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h.log.Debug(r)
+		h.log.Info(r)
 		next.ServeHTTP(w, r)
 	})
 }
@@ -27,16 +27,24 @@ func (h *Handler) errorProcessing(f ErrorHandlerFunc) func(w http.ResponseWriter
 	return (func(w http.ResponseWriter, r *http.Request) {
 		err := f(w, r)
 
-		switch err {
-		case err.(*customErrors.NotFoundError):
-			w.WriteHeader(404)
-			w.Write([]byte(err.Error()))
-		case err.(*customErrors.AlreadyExistsError):
-			w.WriteHeader(403)
-			w.Write([]byte(err.Error()))
-		default:
-			w.WriteHeader(500)
-			h.log.Error(err)
+		if err != nil {
+			switch err.(type) {
+			case *customErrors.ValidationError:
+				h.log.Error(err)
+				w.WriteHeader(400)
+				w.Write([]byte(err.Error()))
+			case *customErrors.NotFoundError:
+				h.log.Error(err)
+				w.WriteHeader(404)
+				w.Write([]byte(err.Error()))
+			case *customErrors.AlreadyExistsError:
+				h.log.Error(err)
+				w.WriteHeader(403)
+				w.Write([]byte(err.Error()))
+			default:
+				w.WriteHeader(500)
+				h.log.Error(err)
+			}
 		}
 	})
 }
