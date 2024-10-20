@@ -1,10 +1,12 @@
 package main
 
 import (
+	"auth/config"
 	"auth/database"
 	"auth/handler"
 	"auth/repo"
 	"auth/services"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -24,13 +26,15 @@ import (
 // @name Bearer-Token
 
 func main() {
+	config := config.Init()
+
 	connectionInfo := database.ConnectionInfo{
-		Username: "postgres",
-		Host:     "localhost",
-		Port:     "5432",
-		DBName:   "Auth",
-		SSLMode:  "disable",
-		Password: "123456",
+		Username: config.DB_CONFIG.DB_USER,
+		Host:     config.DB_CONFIG.DB_HOST,
+		Port:     config.DB_CONFIG.DB_PORT,
+		DBName:   config.DB_CONFIG.DB_NAME,
+		SSLMode:  config.DB_CONFIG.SSL_MODE,
+		Password: config.DB_CONFIG.DB_PASS,
 	}
 
 	db, err := database.NewPostgresConnection(connectionInfo)
@@ -50,15 +54,15 @@ func main() {
 	}
 
 	repo := repo.NewRepos(db)
-	servs := services.NewServices(repo)
+	servs := services.NewServices(repo, *config)
 	handler := handler.NewHandler(servs, logger)
 
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    fmt.Sprintf("%s:%s", config.HOST, config.PORT),
 		Handler: handler.Init(),
 	}
 
-	log.Println("SERVER STARTED AT", time.Now().Format(time.RFC3339))
+	logger.Info("SERVER STARTED AT", time.Now().Format(time.RFC3339))
 
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatal()

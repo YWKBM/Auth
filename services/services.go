@@ -1,6 +1,9 @@
 package services
 
-import "auth/repo"
+import (
+	"auth/config"
+	"auth/repo"
+)
 
 type AuthorizationService interface {
 	CreateUser(login, password, email string) error
@@ -16,8 +19,8 @@ type Services struct {
 	AuthService AuthorizationService
 }
 
-func NewServices(repos *repo.Repos) *Services {
+func NewServices(repos *repo.Repos, config config.Config) *Services {
 	return &Services{
-		AuthService: NewAuthService(repos),
+		AuthService: NewAuthService(repos, config.SECRET_KEY),
 	}
 }

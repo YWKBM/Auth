@@ -14,18 +14,19 @@ import (
 )
 
 const (
-	salt       = "qweqweasddfasdfasdfqwerqwetasdg"
-	signingKey = "qrkjk#4#%35FSFJlja#4353KSFjH"
-	tokenTTL   = 12 * time.Hour
+	salt     = "qweqweasddfasdfasdfqwerqwetasdg"
+	tokenTTL = 12 * time.Hour
 )
 
 type AuthService struct {
-	repo *repo.Repos
+	repo       *repo.Repos
+	signingKey string
 }
 
-func NewAuthService(repos *repo.Repos) *AuthService {
+func NewAuthService(repos *repo.Repos, signingKey string) *AuthService {
 	return &AuthService{
-		repo: repos,
+		repo:       repos,
+		signingKey: signingKey,
 	}
 }
 
@@ -71,12 +72,12 @@ func (a *AuthService) CreateTokenPair(login, password string) (string, string, e
 		ID:        jti,
 	})
 
-	st, err := token.SignedString([]byte(signingKey))
+	st, err := token.SignedString([]byte(a.signingKey))
 	if err != nil {
 		return "", "", err
 	}
 
-	sr, err := refresh.SignedString([]byte(signingKey))
+	sr, err := refresh.SignedString([]byte(a.signingKey))
 	if err != nil {
 		return "", "", err
 	}
@@ -120,7 +121,7 @@ func (a *AuthService) ParseAccessToken(accessToken string) (int, error) {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte(signingKey), nil
+		return []byte(a.signingKey), nil
 	})
 	if err != nil {
 		return 0, err
@@ -146,7 +147,7 @@ func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {
 			return nil, fmt.Errorf("unexpected signing method")
 		}
 
-		return []byte(signingKey), nil
+		return []byte(a.signingKey), nil
 	})
 	if err != nil {
 		log.Fatal((err))
@@ -192,12 +193,12 @@ func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {
 		ID:        jti,
 	})
 
-	st, err := token.SignedString([]byte(signingKey))
+	st, err := token.SignedString([]byte(a.signingKey))
 	if err != nil {
 		return "", "", err
 	}
 
-	sr, err := refresh.SignedString([]byte(signingKey))
+	sr, err := refresh.SignedString([]byte(a.signingKey))
 	if err != nil {
 		return "", "", err
 	}
