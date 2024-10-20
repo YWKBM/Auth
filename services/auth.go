@@ -1,12 +1,12 @@
 package services
 
 import (
+	"auth/entities"
 	"auth/repo"
 	"crypto/sha1"
 	"errors"
 	"fmt"
 	"log"
-	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -21,6 +21,12 @@ const (
 type AuthService struct {
 	repo       *repo.Repos
 	signingKey string
+}
+
+type AccessTokenClaims struct {
+	UserId   int           `json:"UserId"`
+	UserRole entities.Role `json:"UserRole"`
+	jwt.RegisteredClaims
 }
 
 func NewAuthService(repos *repo.Repos, signingKey string) *AuthService {
@@ -54,13 +60,15 @@ func (a *AuthService) CreateTokenPair(login, password string) (string, string, e
 	jti := fmt.Sprint(uuid.New())
 	expiresAt := time.Now().Add(tokenTTL)
 
-	claims := &jwt.MapClaims{
-		"UserId":    fmt.Sprintf("%v", user.Id),
-		"UserRole":  user.UserRole,
-		"ExpiresAt": jwt.NewNumericDate(expiresAt),
-		"IssuedAt":  jwt.NewNumericDate(time.Now()),
-		"Issuer":    "user",
-		"jti":       jti,
+	claims := &AccessTokenClaims{
+		user.Id,
+		user.UserRole,
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    "user",
+			ID:        jti,
+		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -133,16 +141,25 @@ func (a *AuthService) ParseAccessToken(accessToken string) (int, error) {
 		return 0, errors.New("unknown token claims")
 	}
 
-	exp := claims["ExpiresAt"]
-	if exp.(time.Time).Unix() < time.Now().Unix() {
-		return 0, errors.New("token expired")
-	}
-
-	userIdVal := claims["UserId"]
-	userId, err := strconv.Atoi(userIdVal.(string))
+	exp, err := claims.GetExpirationTime()
 	if err != nil {
 		return 0, err
 	}
+
+	if exp != nil && exp.Time.Unix() < time.Now().Unix() {
+		return 0, errors.New("token expired")
+	}
+
+	issuer, err := claims.GetIssuer()
+	if err != nil {
+		return 0, err
+	}
+
+	if issuer != "user" {
+		return 0, errors.New("invalid token")
+	}
+
+	userId := int(claims["UserId"].(float64))
 
 	return userId, nil
 }
@@ -169,6 +186,10 @@ func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {
 		return "", "", err
 	}
 
+	if issuer != "user-refresh" {
+		return "", "", errors.New("invalid token")
+	}
+
 	exp, err := refreshTokenClaims.GetExpirationTime()
 	if err != nil {
 		return "", "", err
@@ -190,13 +211,15 @@ func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {
 	jti := fmt.Sprint(uuid.New())
 	expiresAt := time.Now().Add(tokenTTL)
 
-	claims := &jwt.MapClaims{
-		"UserId":    fmt.Sprintf("%v", userId),
-		"UserRole":  role,
-		"ExpiresAt": jwt.NewNumericDate(expiresAt),
-		"IssuedAt":  jwt.NewNumericDate(time.Now()),
-		"Issuer":    "user",
-		"jti":       jti,
+	claims := &AccessTokenClaims{
+		userId,
+		role,
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    "user",
+			ID:        jti,
+		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
