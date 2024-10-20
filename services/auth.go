@@ -15,7 +15,7 @@ import (
 
 const (
 	salt     = "qweqweasddfasdfasdfqwerqwetasdg"
-	tokenTTL = 12 * time.Hour
+	tokenTTL = 3 * time.Hour
 )
 
 type AuthService struct {
@@ -65,8 +65,9 @@ func (a *AuthService) CreateTokenPair(login, password string) (string, string, e
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
+	// refresh-token
 	refresh := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenTTL)),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenTTL * 2)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		Issuer:    "user-refresh",
 		ID:        jti,
@@ -187,7 +188,7 @@ func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	refresh := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenTTL)),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenTTL * 2)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		Issuer:    "user-refresh",
 		ID:        jti,
