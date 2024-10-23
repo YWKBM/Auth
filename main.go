@@ -46,7 +46,7 @@ func main() {
 
 	logger := logrus.New()
 
-	file, err := os.OpenFile("auth.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	file, err := os.OpenFile("logs/auth.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err == nil {
 		logger.SetOutput(file)
 	} else {
