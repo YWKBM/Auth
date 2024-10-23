@@ -1,0 +1,32 @@
+version: "3.9"
+networks:
+  Auth:
+  driver: bridge
+
+services:
+  app:
+    container_name: Auth
+    build:
+    dockerfile: Dockerfile
+  prots:
+    - "${PORT}:${PORT}"
+
+postgres:
+  image: postgres:16
+  environment:
+    POSTGRES_DB: ${DB_NAME}
+    POSTGRES_USER: ${DB_USER}
+    POSTGRES_PASSWORD: ${DB_PASS}
+  ports:
+    - "${DB_PORT}:${DB_PORT}"
+
+migrate:
+  image: migrate/migrate
+
+  depends_on:
+    - postgres
+
+  volumes:
+    - /scheme:/migrations
+
+  command: [ "-path", "/migrations", "-database", "postgres://$${DB_USER}:$${DB_PASS}@$${HOST}:5432/$${DB_NAME}?sslmode=$${SSL_MODE}", "up" ]
