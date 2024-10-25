@@ -12,7 +12,11 @@ FROM golang:alpine AS builder
 
 WORKDIR /build
 
-RUN go build -o main main.go
+ADD go.mod .
+
+COPY . .
+
+RUN go build -v -o main
 
 FROM alpine
 
@@ -27,6 +31,12 @@ ENV DB_PORT ${DB_PORT}
 ENV DB_PASS ${DB_PASS}
 ENV DB_HOST ${DB_HOST}
 
+
+ADD .env .
+ADD /logs/auth.log /logs/auth.log
+
 COPY --from=builder /build/main /build/main
 
-CMD [". /main"]
+EXPOSE ${PORT}
+
+CMD ["/build/main"]

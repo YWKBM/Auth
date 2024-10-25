@@ -1,36 +1,55 @@
 version: "3.9"
 networks:
-  Auth:
-  driver: bridge
+  auth:
+    driver: bridge
 
 services:
   app:
-    container_name: Auth
+    container_name: AuthService
+    hostname: auth-service
     build:
-    dockerfile: Dockerfile
-  prots:
-    - "${PORT}:${PORT}"
-  volumes:
-    - /logs:/var/log/services
+      context: .
+      dockerfile: Dockerfile
+    #ports:
+    #   - "${PORT}:${PORT}"
+    environment:
+      HOST: ${HOST}
+      PORT: ${PORT}
+      SECRET_KEY: ${SECRET_KEY}
+      DB_USER: ${DB_USER}
+      DB_NAME: ${DB_NAME}
+      SSL_MODE: ${SSL_MODE}
+      DB_PORT: ${DB_PORT}
+      DB_PASS: ${DB_PASS}
+      DB_HOST: ${DB_HOST}
+    volumes:
+      - /logs/auth.log:/var/log/services/auth.log
+    networks:
+      - auth
+    depends_on:
+      - postgres
 
-postgres:
-  image: postgres:16
-  environment:
-    POSTGRES_DB: ${DB_NAME}
-    POSTGRES_USER: ${DB_USER}
-    POSTGRES_PASSWORD: ${DB_PASS}
-  ports:
-    - "${DB_PORT}:${DB_PORT}"
-  volumes:
-    - ./postgres-data:/var/lib/postgresql/auth/data
+  postgres:
+    container_name: AuthDB
+    hostname: ${DB_HOST}
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    #  ports:
+    #    - "${DB_PORT}:${DB_PORT}"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/auth/data
+    networks:
+      - auth
 
-migrate:
-  image: migrate/migrate
-
-  depends_on:
-    - postgres
-
-  volumes:
-    - /scheme:/migrations
-
-  command: [ "-path", "/migrations", "-database", "postgres://$${DB_USER}:$${DB_PASS}@$${HOST}:$${DB_PORT}/$${DB_NAME}?sslmode=$${SSL_MODE}", "up" ]
+  migrate:
+    image: migrate/migrate
+    depends_on:
+      - postgres
+    volumes:
+      - /scheme:/migrations
+    command: [ "-path", "/migrations", "-database", "postgres://$${DB_USER}:$${DB_PASS}@$${HOST}:$${DB_PORT}/$${DB_NAME}?sslmode=$${SSL_MODE}", "up" ]
+    networks:
+      - auth
