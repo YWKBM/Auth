@@ -55,6 +55,7 @@ func main() {
 	}
 
 	logger.Info("SERVER STARTED AT", time.Now().Format(time.RFC3339))
+	logger.Info("LISTENING:", server.Addr)
 
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatal()
