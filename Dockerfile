@@ -33,7 +33,6 @@ ENV DB_HOST ${DB_HOST}
 
 
 ADD .env .
-ADD /logs/auth.log /logs/auth.log
 
 COPY --from=builder /build/main /build/main
 
