@@ -4,6 +4,7 @@ import (
 	"auth/customErrors"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -17,6 +18,15 @@ const (
 func (h *Handler) requestLogging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h.log.Info(r)
+
+		buf, err := io.ReadAll(r.Body)
+		if err != nil {
+			h.log.Error(fmt.Printf("Error reading request body: %v", err.Error()))
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		h.log.Info(fmt.Printf("Request body: %v", string(buf)))
+
 		next.ServeHTTP(w, r)
 	})
 }
@@ -46,6 +56,16 @@ func (h *Handler) errorProcessing(f ErrorHandlerFunc) func(w http.ResponseWriter
 				h.log.Error(err)
 			}
 		}
+	})
+}
+
+func (h *Handler) cors(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=ascii")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type,access-control-allow-origin, access-control-allow-headers")
+
+		next.ServeHTTP(w, r)
 	})
 }
 

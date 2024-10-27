@@ -23,6 +23,7 @@ func (h *Handler) Init() *mux.Router {
 	router := mux.NewRouter()
 
 	router.Use(h.requestLogging)
+	router.Use(h.cors)
 
 	router.HandleFunc("/api/auth/sign_up", h.errorProcessing(h.authHandler.SignUp)).Methods("POST")
 	router.HandleFunc("/api/auth/sign_in", h.errorProcessing(h.authHandler.SignIn)).Methods("POST")
