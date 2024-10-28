@@ -61,11 +61,13 @@ func main() {
 
 	logger.Info("SERVER STARTED AT", time.Now().Format(time.RFC3339))
 
+	//allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
 	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", config.HOST, config.PORT),
 		handlers.CORS(
 			handlers.AllowedOrigins([]string{"*"}),
-			handlers.AllowedHeaders([]string{"*"}),
-			handlers.AllowedMethods([]string{"POST", "OPTIONS", "GET", "DELETE", "PUT"}),
+			handlers.AllowedHeaders([]string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "Authorization", "X-CSRF-Token"}),
+			handlers.AllowedMethods([]string{"OPTIONS", "POST", "GET", "DELETE", "PUT"}),
+			handlers.AllowCredentials(),
 		)(handler.Init())); err != nil {
 		log.Fatal()
 	}
