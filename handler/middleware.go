@@ -2,6 +2,7 @@ package handler
 
 import (
 	"auth/customErrors"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -17,15 +18,12 @@ const (
 
 func (h *Handler) requestLogging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h.log.Info(r)
+		buf, _ := io.ReadAll(r.Body)
 
-		buf, err := io.ReadAll(r.Body)
-		if err != nil {
-			h.log.Error(fmt.Printf("Error reading request body: %v", err.Error()))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
 		h.log.Info(fmt.Printf("Request body: %v", string(buf)))
+
+		reader := io.NopCloser(bytes.NewBuffer(buf))
+		r.Body = reader
 
 		next.ServeHTTP(w, r)
 	})
@@ -59,15 +57,15 @@ func (h *Handler) errorProcessing(f ErrorHandlerFunc) func(w http.ResponseWriter
 	})
 }
 
-func (h *Handler) cors(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=ascii")
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type,access-control-allow-origin, access-control-allow-headers")
+// func (h *Handler) cors(next http.Handler) http.Handler {
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		w.Header().Add("Access-Control-Allow-Origin", "*")
+// 		w.Header().Add("Access-Control-Allow-Methods", "POST, OPTIONS, GET, DELETE, PUT")
+// 		w.Header().Add("Access-Control-Allow-Headers", "*")
 
-		next.ServeHTTP(w, r)
-	})
-}
+// 		next.ServeHTTP(w, r)
+// 	})
+// }
 
 func (h *Handler) userIdentity(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/handlers"
+	"github.com/pressly/goose/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -41,23 +43,30 @@ func main() {
 		panic(err)
 	}
 
+	if err := goose.SetDialect("postgres"); err != nil {
+		panic(err)
+	}
+
+	if err := goose.Up(db, "migrations"); err != nil {
+		panic(err)
+	}
+
 	defer db.Close()
 
 	logger := logrus.New()
 
 	repo := repo.NewRepos(db)
 	servs := services.NewServices(repo, *config)
-	handler := handler.NewHandler(servs, logger)
-
-	server := &http.Server{
-		Addr:    fmt.Sprintf("%s:%s", config.HOST, config.PORT),
-		Handler: handler.Init(),
-	}
+	handler := handler.NewHandler(servs, config, logger)
 
 	logger.Info("SERVER STARTED AT", time.Now().Format(time.RFC3339))
-	logger.Info("LISTENING:", server.Addr)
 
-	if err := server.ListenAndServe(); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", config.HOST, config.PORT),
+		handlers.CORS(
+			handlers.AllowedOrigins([]string{"*"}),
+			handlers.AllowedHeaders([]string{"*"}),
+			handlers.AllowedMethods([]string{"POST", "OPTIONS", "GET", "DELETE", "PUT"}),
+		)(handler.Init())); err != nil {
 		log.Fatal()
 	}
 }
