@@ -33,6 +33,7 @@ ENV DB_HOST ${DB_HOST}
 
 
 ADD .env .
+ADD /migrations /migrations
 
 COPY --from=builder /build/main /build/main
 

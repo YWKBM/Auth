@@ -65,6 +65,7 @@ func main() {
 	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", config.HOST, config.PORT),
 		handlers.CORS(
 			handlers.AllowedOrigins([]string{"*"}),
+			handlers.AllowCredentials(),
 			handlers.AllowedHeaders([]string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "Authorization", "X-CSRF-Token"}),
 			handlers.AllowedMethods([]string{"OPTIONS", "POST", "GET", "DELETE", "PUT"}),
 			handlers.AllowCredentials(),
