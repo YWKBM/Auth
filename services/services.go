@@ -13,6 +13,7 @@ type AuthorizationService interface {
 	DeleteTokenPair(userId int) error
 	ParseAccessToken(accessToken string) (int, error)
 	RenewToken(refreshToken string) (string, string, error)
+	ResolveAccess(accessToken string, expectedRole string) error
 }
 
 type Services struct {

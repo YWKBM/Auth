@@ -170,3 +170,33 @@ func (a *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) err
 
 	return nil
 }
+
+func (a *AuthHandler) ResolveUser(w http.ResponseWriter, r *http.Request) error {
+	req := dto.IdentityRequest{}
+	var result dto.IdentityResponse
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		return err
+	}
+
+	err = a.authService.ResolveAccess(req.AuthToken, req.Role)
+	if err != nil {
+		result = dto.IdentityResponse{
+			Status: "Failed",
+			Error:  err.Error(),
+		}
+	} else {
+		result.Status = "OK"
+	}
+
+	resp, err := json.Marshal(result)
+	if err != nil {
+		return err
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(resp)
+
+	return nil
+}

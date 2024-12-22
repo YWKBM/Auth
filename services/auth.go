@@ -1,6 +1,7 @@
 package services
 
 import (
+	"auth/customErrors"
 	"auth/entities"
 	"auth/repo"
 	"crypto/sha1"
@@ -245,6 +246,52 @@ func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {
 
 	return st, sr, nil
 
+}
+
+func (a *AuthService) ResolveAccess(accessToken string, expectedRole string) error {
+	tokenClaims, err := a.getTokenData(accessToken)
+	if err != nil {
+		return err
+	}
+
+	userId := int(tokenClaims["UserId"].(float64))
+	_, err = a.repo.Authorization.GetUserById(userId)
+	if err != nil {
+		return err
+	}
+
+	userRole, err := entities.ParseRole(tokenClaims["UserRole"].(string))
+	if err != nil {
+		return err
+	}
+
+	role, err := entities.ParseRole(expectedRole)
+
+	if userRole != role {
+		return &customErrors.ValidationError{Message: "forbidden for role"}
+	}
+
+	return err
+}
+
+func (a *AuthService) getTokenData(accessToken string) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return []byte(a.signingKey), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("unknown token claims")
+	}
+
+	return claims, nil
 }
 
 func generateHashPassword(password string) string {
