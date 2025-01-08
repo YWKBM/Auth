@@ -5,6 +5,7 @@ import (
 	"auth/services"
 	"encoding/json"
 	"net/http"
+	"strings"
 )
 
 type AuthHandler struct {
@@ -180,7 +181,13 @@ func (a *AuthHandler) ResolveUser(w http.ResponseWriter, r *http.Request) error 
 		return err
 	}
 
-	err = a.authService.ResolveAccess(req.AuthToken, req.Role)
+	accessToken := strings.Split(req.AuthToken, " ")
+	if len(accessToken) != 2 || accessToken[0] != "Bearer" {
+		w.WriteHeader(http.StatusUnauthorized)
+		return nil
+	}
+
+	err = a.authService.ResolveAccess(accessToken[1], req.Role)
 	if err != nil {
 		result = dto.IdentityResponse{
 			Status: "Failed",
