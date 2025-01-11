@@ -47,7 +47,12 @@ func (h *Handler) Init() *mux.Router {
 
 	router.HandleFunc("/resolve", h.errorProcessing(h.authHandler.ResolveUser)).Methods("POST")
 
+	// /provider
+	// /provider/sign_up - create request to manager
+	// /provider/sign_in
+
 	// /admin
+	// /admin/sigh_in - default account
 
 	return router
 }

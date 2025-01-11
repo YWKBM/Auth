@@ -13,6 +13,7 @@ type Config struct {
 	SECRET_KEY string
 
 	DB_CONFIG PostgresConfig
+	RABBIT_MQ RabbitMQConfig
 }
 
 type PostgresConfig struct {
@@ -22,6 +23,10 @@ type PostgresConfig struct {
 	DB_PORT  string
 	DB_PASS  string
 	DB_HOST  string
+}
+
+type RabbitMQConfig struct {
+	RABBIT_URL string
 }
 
 func Init() *Config {
