@@ -3,6 +3,7 @@ package queue
 import (
 	"auth/config"
 	"auth/queue/messages"
+	"encoding/json"
 	"log"
 
 	"github.com/streadway/amqp"
@@ -83,14 +84,19 @@ func (q *Queue) SendMessage(message messages.Message) error {
 		return amqp.ErrClosed
 	}
 
-	err := q.channel.Publish(
+	msg, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+
+	err = q.channel.Publish(
 		"",
 		message.RoutingKey,
 		false,
 		false,
 		amqp.Publishing{
 			ContentType: "application/json",
-			Body:        message.Body,
+			Body:        msg,
 		},
 	)
 

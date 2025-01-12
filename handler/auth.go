@@ -54,7 +54,8 @@ func (a *AuthHandler) SignUpProvider(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 
-	err = a.services.ProviderService.RequestCreateProvider(req.FirstName, req.MiddleName, req.SecondName, req.Email, req.Phone)
+	err = a.services.ProviderService.RequestCreateProvider(
+		req.FirstName, req.MiddleName, req.SecondName, req.Email, req.Phone, req.Address, req.Region)
 	if err != nil {
 		return err
 	}

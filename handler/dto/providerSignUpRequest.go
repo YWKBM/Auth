@@ -7,4 +7,5 @@ type ProviderSignUpRequest struct {
 	Email      string `json:"email"`
 	Phone      string `json:"phone"`
 	Address    string `json:"address"`
+	Region     string `json:"region"`
 }
