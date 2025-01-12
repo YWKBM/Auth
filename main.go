@@ -4,6 +4,7 @@ import (
 	"auth/config"
 	"auth/database"
 	"auth/handler"
+	initData "auth/init"
 	"auth/repo"
 	"auth/services"
 	"fmt"
@@ -55,6 +56,7 @@ func main() {
 	logger := logrus.New()
 
 	repo := repo.NewRepos(db)
+	initData.SetInit(*config, *repo).InitData()
 	servs := services.NewServices(repo, *config)
 	handler := handler.NewHandler(servs, config, logger)
 

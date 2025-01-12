@@ -14,6 +14,7 @@ type Config struct {
 
 	DB_CONFIG PostgresConfig
 	RABBIT_MQ RabbitMQConfig
+	ADMIN     AdminConfig
 }
 
 type PostgresConfig struct {
@@ -27,6 +28,12 @@ type PostgresConfig struct {
 
 type RabbitMQConfig struct {
 	RABBIT_URL string
+}
+
+type AdminConfig struct {
+	LOGIN    string
+	EMAIL    string
+	PASSWORD string
 }
 
 func Init() *Config {
