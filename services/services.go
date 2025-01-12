@@ -2,6 +2,7 @@ package services
 
 import (
 	"auth/config"
+	"auth/queue"
 	"auth/repo"
 )
 
@@ -25,8 +26,9 @@ type Services struct {
 	ProviderService ProviderService
 }
 
-func NewServices(repos *repo.Repos, config config.Config) *Services {
+func NewServices(repos *repo.Repos, queue *queue.Queue, config config.Config) *Services {
 	return &Services{
-		AuthService: NewAuthService(repos, config.SECRET_KEY),
+		AuthService:     NewAuthService(repos, config.SECRET_KEY),
+		ProviderService: NewProviderService(repos, queue),
 	}
 }

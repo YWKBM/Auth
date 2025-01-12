@@ -2,9 +2,11 @@ package main
 
 import (
 	"auth/config"
+	"auth/consumer"
 	"auth/database"
 	"auth/handler"
 	initData "auth/init"
+	"auth/queue"
 	"auth/repo"
 	"auth/services"
 	"fmt"
@@ -56,8 +58,20 @@ func main() {
 	logger := logrus.New()
 
 	repo := repo.NewRepos(db)
+
 	initData.SetInit(*config, *repo).InitData()
-	servs := services.NewServices(repo, *config)
+
+	queue, err := queue.AddQueue(config.RABBIT_MQ)
+	if err != nil {
+		log.Fatal()
+	}
+	queue.CreateQueue("core.create_provider")
+
+	servs := services.NewServices(repo, queue, *config)
+
+	consumer := consumer.NewConsumer(servs)
+	queue.AddConsumer("auth.created_provider", consumer.Consume)
+
 	handler := handler.NewHandler(servs, config, logger)
 
 	logger.Info("SERVER STARTED AT", time.Now().Format(time.RFC3339))

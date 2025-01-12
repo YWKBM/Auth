@@ -9,7 +9,11 @@ import (
 )
 
 type Consumer struct {
-	providerService services.ProviderService
+	services *services.Services
+}
+
+func NewConsumer(services *services.Services) *Consumer {
+	return &Consumer{services: services}
 }
 
 func (c *Consumer) Consume(qMessage []byte) {
@@ -21,13 +25,13 @@ func (c *Consumer) Consume(qMessage []byte) {
 		return
 	}
 
-	if message.RoutingKey == "auth.create_provider" {
+	if message.RoutingKey == "auth.created_provider" {
 		var msg = dto.CreatedProviderMessage{}
 		err = json.Unmarshal(message.Body, &msg)
 		if err != nil {
 			log.Println(err.Error())
 			return
 		}
-		c.providerService.CreateProvider(msg.Login, msg.Password, msg.Email)
+		c.services.ProviderService.CreateProvider(msg.Login, msg.Password, msg.Email)
 	}
 }

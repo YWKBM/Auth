@@ -14,6 +14,10 @@ type ProviderService struct {
 	queue *queue.Queue
 }
 
+func NewProviderService(repo *repo.Repos, queue *queue.Queue) ProviderService {
+	return ProviderService{repo: repo, queue: queue}
+}
+
 func (p *ProviderService) RequestCreateProvider(first_name, middle_name, second_name, email, phone string) error {
 	providerInfo := dto.CreateProviderMessage{
 		FirstName:  first_name,

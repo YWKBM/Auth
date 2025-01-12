@@ -32,6 +32,24 @@ func AddQueue(rabbitMqConfig config.RabbitMQConfig) (*Queue, error) {
 	}, nil
 }
 
+func (q *Queue) CreateQueue(queueName string) error {
+	_, err := q.channel.QueueDeclare(
+		queueName,
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+
+	q.queues[queueName] = queueName
+	log.Printf("Queue %s has been added.", queueName)
+	return nil
+}
+
 func (q *Queue) AddConsumer(queueName string, consumeFunc func([]byte)) error {
 	if _, exists := q.queues[queueName]; !exists {
 		return amqp.ErrClosed // Очередь не найдена
