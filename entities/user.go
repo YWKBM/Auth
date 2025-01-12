@@ -13,7 +13,7 @@ type User struct {
 type Role string
 
 const (
-	MANAGER  Role = "MANAGER"
+	ADMIN    Role = "ADMIN"
 	PROVIDER Role = "PROVIDER"
 	USER     Role = "USER"
 )
@@ -24,7 +24,7 @@ func (r Role) String() string {
 
 func ParseRole(s string) (r Role, err error) {
 	capabilities := map[Role]struct{}{
-		MANAGER:  {},
+		ADMIN:    {},
 		PROVIDER: {},
 		USER:     {},
 	}
