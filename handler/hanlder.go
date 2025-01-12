@@ -50,10 +50,5 @@ func (h *Handler) Init() *mux.Router {
 	// /provider
 	router.HandleFunc("/provider/sign_up", h.errorProcessing(h.authHandler.SignUpProvider)).Methods("POST")
 
-	// /provider/sign_up - create request to manager
-
-	// /admin
-	// /admin/sigh_in - default account
-
 	return router
 }
