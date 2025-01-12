@@ -15,7 +15,7 @@ func newAuthRepo(db *sql.DB) *AuthRepo {
 	return &AuthRepo{db: db}
 }
 
-func (r *AuthRepo) CreateUser(login, password, email string) error {
+func (r *AuthRepo) CreateUser(login, password, email, role string) error {
 	var userId int
 
 	err := r.db.QueryRow("SELECT id FROM users WHERE login = $1 OR email = $2", login, email).Scan(&userId)
@@ -27,7 +27,7 @@ func (r *AuthRepo) CreateUser(login, password, email string) error {
 		return &customErrors.AlreadyExistsError{}
 	}
 
-	err = r.db.QueryRow("INSERT INTO users (login, password, email, userrole) values ($1, $2, $3, $4) RETURNING id", login, password, email, "USER").Scan(&userId)
+	err = r.db.QueryRow("INSERT INTO users (login, password, email, userrole) values ($1, $2, $3, $4) RETURNING id", login, password, email, role).Scan(&userId)
 	if err != nil {
 		return err
 	}

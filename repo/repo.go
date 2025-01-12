@@ -7,7 +7,7 @@ import (
 )
 
 type AuthorizationRepo interface {
-	CreateUser(login, password, email string) error
+	CreateUser(login, password, email, role string) error
 	GetUserById(userId int) (entities.User, error)
 	GetUser(login, password string) (entities.User, error)
 	CreateToken(jti string, userId int, expiry time.Time) error

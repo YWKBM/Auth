@@ -5,6 +5,7 @@ import (
 	"auth/queue/messages"
 	"auth/queue/messages/dto"
 	"auth/repo"
+	"auth/utils"
 	"encoding/json"
 )
 
@@ -40,5 +41,11 @@ func (p *ProviderService) RequestCreateProvider(first_name, middle_name, second_
 }
 
 func (p *ProviderService) CreateProvider(login, password, email string) error {
+	pass := utils.GnerateHashPassword(password, salt)
+	err := p.repo.Authorization.CreateUser(login, pass, email, "PROVIDER")
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

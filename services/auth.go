@@ -4,7 +4,7 @@ import (
 	"auth/customErrors"
 	"auth/entities"
 	"auth/repo"
-	"crypto/sha1"
+	"auth/utils"
 	"errors"
 	"fmt"
 	"log"
@@ -38,8 +38,8 @@ func NewAuthService(repos *repo.Repos, signingKey string) *AuthService {
 }
 
 func (a *AuthService) CreateUser(login, password, email string) error {
-	pass := generateHashPassword(password)
-	err := a.repo.Authorization.CreateUser(login, pass, email)
+	pass := utils.GnerateHashPassword(password, salt)
+	err := a.repo.Authorization.CreateUser(login, pass, email, "USER")
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (a *AuthService) CreateProvider() (int, error) {
 }
 
 func (a *AuthService) CreateTokenPair(login, password string) (string, string, error) {
-	pass := generateHashPassword(password)
+	pass := utils.GnerateHashPassword(password, salt)
 	user, err := a.repo.Authorization.GetUser(login, pass)
 	if err != nil {
 		return "", "", err
@@ -113,11 +113,11 @@ func (a *AuthService) ChangePassword(userId int, oldPassword, newPassword string
 		return err
 	}
 
-	if user.Password != generateHashPassword(oldPassword) {
+	if user.Password != utils.GnerateHashPassword(oldPassword, salt) {
 		return errors.New("wrong login or password")
 	}
 
-	err = a.repo.Authorization.ChangePassword(user.Id, generateHashPassword(newPassword))
+	err = a.repo.Authorization.ChangePassword(user.Id, utils.GnerateHashPassword(newPassword, salt))
 	if err != nil {
 		return err
 	}
@@ -249,7 +249,7 @@ func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {
 }
 
 func (a *AuthService) ResolveAccess(accessToken string, expectedRole string) error {
-	tokenClaims, err := a.getTokenData(accessToken)
+	tokenClaims, err := utils.GetTokenData(accessToken, a.signingKey)
 	if err != nil {
 		return err
 	}
@@ -272,31 +272,4 @@ func (a *AuthService) ResolveAccess(accessToken string, expectedRole string) err
 	}
 
 	return err
-}
-
-func (a *AuthService) getTokenData(accessToken string) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-
-		return []byte(a.signingKey), nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return nil, errors.New("unknown token claims")
-	}
-
-	return claims, nil
-}
-
-func generateHashPassword(password string) string {
-	hash := sha1.New()
-	hash.Write([]byte(password))
-
-	return fmt.Sprintf("%x", hash.Sum([]byte(salt)))
 }

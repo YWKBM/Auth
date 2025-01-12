@@ -19,7 +19,7 @@ func NewHandler(servs *services.Services, config *config.Config, logger *logrus.
 	return &Handler{
 		config:      config,
 		log:         logger,
-		authHandler: newAuthHandler(servs.AuthService)}
+		authHandler: newAuthHandler(*servs)}
 }
 
 func (h *Handler) Init() *mux.Router {
@@ -48,8 +48,9 @@ func (h *Handler) Init() *mux.Router {
 	router.HandleFunc("/resolve", h.errorProcessing(h.authHandler.ResolveUser)).Methods("POST")
 
 	// /provider
+	router.HandleFunc("/provider/sign_up", h.errorProcessing(h.authHandler.SignUpProvider)).Methods("POST")
+
 	// /provider/sign_up - create request to manager
-	// /provider/sign_in
 
 	// /admin
 	// /admin/sigh_in - default account

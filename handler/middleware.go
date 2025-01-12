@@ -86,7 +86,7 @@ func (h *Handler) userIdentity(next http.Handler) http.Handler {
 			return
 		}
 
-		userId, err := h.authHandler.authService.ParseAccessToken(headerParts[1])
+		userId, err := h.authHandler.services.AuthService.ParseAccessToken(headerParts[1])
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return

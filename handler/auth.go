@@ -9,11 +9,11 @@ import (
 )
 
 type AuthHandler struct {
-	authService services.AuthorizationService
+	services services.Services
 }
 
-func newAuthHandler(authService services.AuthorizationService) *AuthHandler {
-	return &AuthHandler{authService: authService}
+func newAuthHandler(services services.Services) *AuthHandler {
+	return &AuthHandler{services: services}
 }
 
 // SignUp godoc
@@ -38,7 +38,23 @@ func (a *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	err = a.authService.CreateUser(req.Login, req.Password, req.Email)
+	err = a.services.AuthService.CreateUser(req.Login, req.Password, req.Email)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *AuthHandler) SignUpProvider(w http.ResponseWriter, r *http.Request) error {
+	var req dto.ProviderSignUpRequest
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		return err
+	}
+
+	err = a.services.ProviderService.RequestCreateProvider(req.FirstName, req.MiddleName, req.SecondName, req.Email, req.Phone)
 	if err != nil {
 		return err
 	}
@@ -63,7 +79,7 @@ func (a *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	aToken, rToken, err := a.authService.CreateTokenPair(req.Login, req.Password)
+	aToken, rToken, err := a.services.AuthService.CreateTokenPair(req.Login, req.Password)
 	if err != nil {
 		return err
 	}
@@ -101,7 +117,7 @@ func (a *AuthHandler) RenewCredentials(w http.ResponseWriter, r *http.Request) e
 		return err
 	}
 
-	aToken, rToken, err := a.authService.RenewToken(req.RefreshToken)
+	aToken, rToken, err := a.services.AuthService.RenewToken(req.RefreshToken)
 	if err != nil {
 		return err
 	}
@@ -135,7 +151,7 @@ func (a *AuthHandler) SignOut(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	err = a.authService.DeleteTokenPair(userId)
+	err = a.services.AuthService.DeleteTokenPair(userId)
 	if err != nil {
 		return err
 	}
@@ -164,7 +180,7 @@ func (a *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 
-	err = a.authService.ChangePassword(userId, req.OldPassword, req.NewPassword)
+	err = a.services.AuthService.ChangePassword(userId, req.OldPassword, req.NewPassword)
 	if err != nil {
 		return err
 	}
@@ -187,7 +203,7 @@ func (a *AuthHandler) ResolveUser(w http.ResponseWriter, r *http.Request) error 
 		return nil
 	}
 
-	err = a.authService.ResolveAccess(accessToken[1], req.Role)
+	err = a.services.AuthService.ResolveAccess(accessToken[1], req.Role)
 	if err != nil {
 		result = dto.IdentityResponse{
 			Status: "Failed",

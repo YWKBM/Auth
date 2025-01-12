@@ -21,7 +21,8 @@ type ProviderIngterface interface {
 }
 
 type Services struct {
-	AuthService AuthorizationService
+	AuthService     AuthorizationService
+	ProviderService ProviderService
 }
 
 func NewServices(repos *repo.Repos, config config.Config) *Services {
