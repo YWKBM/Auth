@@ -52,6 +52,12 @@ func Init() *Config {
 	dbPass, _ := os.LookupEnv("DB_PASS")
 	dbHost, _ := os.LookupEnv("DB_HOST")
 
+	rabbitUrl, _ := os.LookupEnv("RABBIT_URL")
+
+	admLogin, _ := os.LookupEnv("LOGIN")
+	admEmail, _ := os.LookupEnv("EMAIL")
+	admPass, _ := os.LookupEnv("PASSWORD")
+
 	return &Config{
 		HOST:       host,
 		PORT:       port,
@@ -64,6 +70,16 @@ func Init() *Config {
 			DB_PORT:  dbPort,
 			DB_PASS:  dbPass,
 			DB_HOST:  dbHost,
+		},
+
+		RABBIT_MQ: RabbitMQConfig{
+			RABBIT_URL: rabbitUrl,
+		},
+
+		ADMIN: AdminConfig{
+			LOGIN:    admLogin,
+			EMAIL:    admEmail,
+			PASSWORD: admPass,
 		},
 	}
 }
