@@ -8,6 +8,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+const salt = "qweqweasddfasdfasdfqwerqwetasdg"
+
 func GetTokenData(accessToken, signingKey string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -28,7 +30,7 @@ func GetTokenData(accessToken, signingKey string) (jwt.MapClaims, error) {
 	return claims, nil
 }
 
-func GnerateHashPassword(password, salt string) string {
+func GnerateHashPassword(password string) string {
 	hash := sha1.New()
 	hash.Write([]byte(password))
 

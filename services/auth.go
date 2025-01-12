@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	salt     = "qweqweasddfasdfasdfqwerqwetasdg"
 	tokenTTL = 3 * time.Hour
 )
 
@@ -38,7 +37,7 @@ func NewAuthService(repos *repo.Repos, signingKey string) *AuthService {
 }
 
 func (a *AuthService) CreateUser(login, password, email string) error {
-	pass := utils.GnerateHashPassword(password, salt)
+	pass := utils.GnerateHashPassword(password)
 	err := a.repo.Authorization.CreateUser(login, pass, email, "USER")
 	if err != nil {
 		return err
@@ -52,7 +51,7 @@ func (a *AuthService) CreateProvider() (int, error) {
 }
 
 func (a *AuthService) CreateTokenPair(login, password string) (string, string, error) {
-	pass := utils.GnerateHashPassword(password, salt)
+	pass := utils.GnerateHashPassword(password)
 	user, err := a.repo.Authorization.GetUser(login, pass)
 	if err != nil {
 		return "", "", err
@@ -113,11 +112,11 @@ func (a *AuthService) ChangePassword(userId int, oldPassword, newPassword string
 		return err
 	}
 
-	if user.Password != utils.GnerateHashPassword(oldPassword, salt) {
+	if user.Password != utils.GnerateHashPassword(oldPassword) {
 		return errors.New("wrong login or password")
 	}
 
-	err = a.repo.Authorization.ChangePassword(user.Id, utils.GnerateHashPassword(newPassword, salt))
+	err = a.repo.Authorization.ChangePassword(user.Id, utils.GnerateHashPassword(newPassword))
 	if err != nil {
 		return err
 	}

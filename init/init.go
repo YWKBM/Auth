@@ -3,6 +3,7 @@ package initData
 import (
 	"auth/config"
 	"auth/repo"
+	"auth/utils"
 )
 
 type Init struct {
@@ -19,5 +20,5 @@ func (i *Init) InitData() {
 }
 
 func (i *Init) createAdmin(config config.AdminConfig) {
-	i.repo.Authorization.CreateUser(config.LOGIN, config.PASSWORD, config.EMAIL, "ADMIN")
+	i.repo.Authorization.CreateUser(config.LOGIN, utils.GnerateHashPassword(config.PASSWORD), config.EMAIL, "ADMIN")
 }
