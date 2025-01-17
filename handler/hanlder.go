@@ -49,6 +49,8 @@ func (h *Handler) Init() *mux.Router {
 
 	// /provider
 	router.HandleFunc("/provider/sign_up", h.errorProcessing(h.authHandler.SignUpProvider)).Methods("POST")
+	router.Handle("/provider/accept", h.userIdentity(http.HandlerFunc(h.errorProcessing(h.authHandler.AcceptProvider)))).Methods("POST")
+	// delete provider
 
 	return router
 }

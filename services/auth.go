@@ -46,10 +46,6 @@ func (a *AuthService) CreateUser(login, password, email string) error {
 	return nil
 }
 
-func (a *AuthService) CreateProvider() (int, error) {
-	return 0, nil
-}
-
 func (a *AuthService) CreateTokenPair(login, password string) (string, string, error) {
 	pass := utils.GnerateHashPassword(password)
 	user, err := a.repo.Authorization.GetUser(login, pass)

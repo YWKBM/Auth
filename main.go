@@ -2,7 +2,6 @@ package main
 
 import (
 	"auth/config"
-	"auth/consumer"
 	"auth/database"
 	"auth/handler"
 	initData "auth/init"
@@ -69,8 +68,8 @@ func main() {
 
 	servs := services.NewServices(repo, queue, *config)
 
-	consumer := consumer.NewConsumer(servs)
-	queue.AddConsumer("auth.created_provider", consumer.Consume)
+	// consumer := consumer.NewConsumer(servs)
+	// queue.AddConsumer("auth.created_provider", consumer.Consume)
 
 	handler := handler.NewHandler(servs, config, logger)
 

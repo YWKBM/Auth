@@ -3,6 +3,7 @@ package handler
 import (
 	"auth/handler/dto"
 	"auth/services"
+	"auth/utils"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -60,6 +61,26 @@ func (a *AuthHandler) SignUpProvider(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 
+	return nil
+}
+
+func (a *AuthHandler) AcceptProvider(w http.ResponseWriter, r *http.Request) error {
+	var req dto.AcceptProvider
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return err
+	}
+
+	pass := utils.GnerateHashPassword(req.Password)
+	err = a.services.ProviderService.CreateProvider(req.Login, pass, req.Email)
+	if err != nil {
+		w.Write([]byte(err.Error()))
+		return err
+	}
+
+	w.WriteHeader(http.StatusAccepted)
 	return nil
 }
 
