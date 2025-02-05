@@ -3,7 +3,7 @@ stages:
   - deploy
 
 variables:
-  IMAGE_NAME: "ywkbm/auth:latest" 
+  IMAGE_NAME: "ywkbm/auth" 
   CONTAINER_NAME: "auth"
 
 
@@ -19,7 +19,7 @@ build:
 
   script:
     - docker builder prune -f 
-    - docker build -t $IMAGE_NAME:latest  .
+    - docker build -t $IMAGE_NAME  .
     - docker push $IMAGE_NAME
   only:
     - master
