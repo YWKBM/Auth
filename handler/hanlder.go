@@ -45,13 +45,12 @@ func (h *Handler) Init() *mux.Router {
 	router.Handle("/sign_out", h.userIdentity(http.HandlerFunc(h.errorProcessing(h.authHandler.SignOut)))).Methods("POST")
 	router.Handle("/change_password", h.userIdentity(http.HandlerFunc(h.errorProcessing(h.authHandler.ChangePassword)))).Methods("POST")
 
-	router.HandleFunc("/resolve", h.errorProcessing(h.authHandler.ResolveUser)).Methods("POST")
-
 	// /provider
 	router.HandleFunc("/provider/sign_up", h.errorProcessing(h.authHandler.SignUpProvider)).Methods("POST")
 
 	// Only for allowed ip's
 	router.HandleFunc("/provider/accept", h.errorProcessing(h.authHandler.AcceptProvider)).Methods("POST")
+	router.HandleFunc("/resolve", h.errorProcessing(h.authHandler.ResolveUser)).Methods("POST")
 
 	// delete provider
 
