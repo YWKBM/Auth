@@ -31,8 +31,6 @@ ENV DB_PORT ${DB_PORT}
 ENV DB_PASS ${DB_PASS}
 ENV DB_HOST ${DB_HOST}
 
-
-ADD .env .
 ADD /migrations /migrations
 
 COPY --from=builder /build/main /build/main
