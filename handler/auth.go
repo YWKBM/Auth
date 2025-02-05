@@ -101,6 +101,11 @@ func (a *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	if !req.Validate() {
+		w.WriteHeader(http.StatusBadRequest)
+		return nil
+	}
+
 	aToken, rToken, err := a.services.AuthService.CreateTokenPair(req.Login, req.Password)
 	if err != nil {
 		return err
