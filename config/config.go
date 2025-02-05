@@ -2,8 +2,6 @@ package config
 
 import (
 	"os"
-
-	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -37,10 +35,6 @@ type AdminConfig struct {
 }
 
 func Init() *Config {
-	if err := godotenv.Load(".env"); err != nil {
-		panic(err)
-	}
-
 	host, _ := os.LookupEnv("HOST")
 	port, _ := os.LookupEnv("PORT")
 	secretkey, _ := os.LookupEnv("SECRET_KEY")
