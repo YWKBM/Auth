@@ -52,8 +52,12 @@ deploy:
     - echo DB_HOST=$DB_HOST >> .env
     - echo RABBIT_URL=$RABBIT_URL >> .env
 
+    - echo LOGIN=$ADMIN_LOGIN >> .env
+    - echo PASSWORD=$ADMIN_PASSWORD >> .env
+    - echo EMAIL=$ADMIN_EMAIL >> .env
+
     - scp .env $SSH_USER@$IP_ADDRESS:/home/$SSH_USER/dev/$CONTAINER_NAME/
-    - ssh $SSH_USER@$IP_ADDRESS "docker stop $CONTAINER_NAME || true && docker rm -f $CONTAINER_NAME || true && docker rmi $IMAGE_NAME | docker pull $IMAGE_NAME | docker run --name $CONTAINER_NAME --env-file /home/$SSH_USER/dev/$CONTAINER_NAME/.env -p $PORT:$PORT -d $IMAGE_NAME"
+    - ssh $SSH_USER@$IP_ADDRESS "docker stop $CONTAINER_NAME || true && docker rm -f $CONTAINER_NAME || true && docker rmi $IMAGE_NAME | docker pull $IMAGE_NAME | docker run --name $CONTAINER_NAME --env-file /home/$SSH_USER/dev/$CONTAINER_NAME/.env -p $PORT:$PORT --network $NETWORK_NAME -d $IMAGE_NAME"
 
   only:
     - master
