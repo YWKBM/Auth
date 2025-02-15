@@ -230,13 +230,12 @@ func (a *AuthHandler) ResolveUser(w http.ResponseWriter, r *http.Request) error 
 		return nil
 	}
 
-	err = a.services.AuthService.ResolveAccess(accessToken[1], req.Role)
+	userId, err := a.services.AuthService.ResolveAccess(accessToken[1], req.Role)
 	if err != nil {
-		result = dto.IdentityResponse{
-			Status: "Failed",
-			Error:  err.Error(),
-		}
+		result.Status = "Failed"
+		result.Error = err.Error()
 	} else {
+		result.UserId = userId
 		result.Status = "OK"
 	}
 

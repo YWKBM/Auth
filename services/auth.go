@@ -243,28 +243,28 @@ func (a *AuthService) RenewToken(refreshToken string) (string, string, error) {
 
 }
 
-func (a *AuthService) ResolveAccess(accessToken string, expectedRole string) error {
+func (a *AuthService) ResolveAccess(accessToken string, expectedRole string) (int, error) {
 	tokenClaims, err := utils.GetTokenData(accessToken, a.signingKey)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	userId := int(tokenClaims["UserId"].(float64))
 	_, err = a.repo.Authorization.GetUserById(userId)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	userRole, err := entities.ParseRole(tokenClaims["UserRole"].(string))
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	role, err := entities.ParseRole(expectedRole)
 
 	if userRole != role {
-		return &customErrors.ValidationError{Message: "forbidden for role"}
+		return 0, &customErrors.ValidationError{Message: "forbidden for role"}
 	}
 
-	return err
+	return userId, nil
 }
