@@ -6,7 +6,7 @@ type IdentityRequest struct {
 }
 
 type IdentityResponse struct {
-	UserId int    `json:"userId"`
+	UserId int    `json:"user_id"`
 	Status string `json:"status"`
 	Error  string `json:"error"`
 }
